@@ -1,0 +1,840 @@
+<!DOCTYPE html>
+<html lang="ru" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Академия Автократии. Подтверждение почты кодом</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --graphite:#20242B;
+  --gold:#DDA000;
+  --gold-ink:#8A6300;
+  --gold-grad:linear-gradient(90deg,#DDA000 0%,#F0C13C 100%);
+  --bg:#F2F3F5;
+  --white:#fff;
+  --text:#12151A;
+  --text-gray:#7A818C;
+  --line:#E6E8EC;
+  --field:#EAF1FB;
+  --red:#E2231A;
+  --green:#18A957;
+  --radius:24px;
+  --transition:.18s ease;
+}
+*{box-sizing:border-box}
+body{
+  margin:0;background:var(--bg);color:var(--text);
+  font-family:'Onest',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+  -webkit-font-smoothing:antialiased;
+}
+button{font-family:inherit}
+
+/* ---------- панель управления прототипом ---------- */
+.bar{
+  position:sticky;top:0;z-index:60;background:var(--graphite);color:#fff;
+  padding:12px 20px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;
+  box-shadow:0 6px 24px rgba(0,0,0,.18);
+}
+.bar b{font-size:13px;letter-spacing:.04em;text-transform:uppercase;color:#9AA1AC;margin-right:8px;font-family:'JetBrains Mono',monospace;font-weight:400}
+.bar button{
+  background:rgba(255,255,255,.08);color:#fff;border:1px solid rgba(255,255,255,.14);
+  padding:7px 13px;border-radius:40px;font-size:13px;cursor:pointer;transition:var(--transition);
+}
+.bar button:hover{background:rgba(255,255,255,.18)}
+.bar button.on{background:var(--gold);border-color:var(--gold);color:#20242B;font-weight:600}
+.bar .sep{width:1px;height:22px;background:rgba(255,255,255,.16);margin:0 4px}
+
+/* ---------- имитация сайта ---------- */
+.stage{position:relative;min-height:760px;padding:24px 24px 40px}
+.site{max-width:1180px;margin:0 auto;filter:saturate(.9)}
+.site.dim{opacity:.45}
+.site-header{
+  background:var(--graphite);border-radius:22px;padding:14px 18px 14px 22px;
+  display:flex;align-items:center;justify-content:space-between;gap:24px;
+}
+.logo{display:flex;align-items:center;gap:10px;color:#fff}
+.logo .mark{width:34px;height:38px;background:var(--gold);clip-path:polygon(50% 0,100% 25%,100% 75%,50% 100%,0 75%,0 25%);display:flex;align-items:center;justify-content:center;font-weight:700;color:#20242B}
+.logo .txt{line-height:1;font-weight:700}
+.logo .txt small{display:block;font-size:11px;letter-spacing:.16em;font-weight:500;opacity:.9;margin-top:3px}
+.site-nav{display:flex;gap:26px;color:#D5D8DD;font-size:15px}
+.btn-login{background:var(--gold);color:#20242B;border:0;padding:11px 22px;border-radius:14px;font-weight:600;font-size:15px}
+.hero{display:grid;grid-template-columns:1fr 1fr;gap:32px;padding:56px 8px 0}
+.kicker{font-family:'JetBrains Mono',monospace;font-size:13px;letter-spacing:.16em;color:var(--gold-ink)}
+.hero h1{font-size:52px;margin:14px 0 12px;letter-spacing:-.02em}
+.hero p{color:#5C636E;font-size:18px;margin:0 0 34px;max-width:420px}
+.btn-hero{background:var(--gold);border:0;color:#20242B;font-weight:600;font-size:17px;padding:18px 40px;border-radius:16px}
+.video{background:#1A1D22;border-radius:18px;aspect-ratio:16/9;display:flex;align-items:center;justify-content:center}
+.video .play{width:74px;height:74px;border-radius:50%;background:var(--gold);display:flex;align-items:center;justify-content:center}
+.partners{display:flex;gap:38px;align-items:center;justify-content:center;flex-wrap:wrap;padding:54px 0 0;color:#8A8F98;font-weight:700;font-size:20px}
+
+/* ---------- модалка ---------- */
+.overlay{
+  position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  background:rgba(32,36,43,.42);padding:24px;
+}
+.modal{
+  width:100%;max-width:420px;background:var(--white);border-radius:var(--radius);
+  box-shadow:0 30px 80px rgba(0,0,0,.28);overflow:hidden;
+}
+.modal-header{display:flex;align-items:center;justify-content:space-between;padding:22px 24px 16px;border-bottom:1px solid var(--line)}
+.modal-title{font-size:24px;font-weight:700;margin:0}
+.close{width:32px;height:32px;border-radius:50%;border:0;background:#F0F1F3;color:#6D7480;font-size:17px;cursor:pointer}
+.modal-body{padding:20px 24px 24px}
+
+.form-group{margin-bottom:14px}
+.input-label{display:block;font-size:14px;color:#3D434D;margin-bottom:6px}
+.form-input{
+  width:100%;border:1px solid var(--line);background:#fff;border-radius:40px;
+  padding:14px 18px;font-size:15px;outline:none;transition:var(--transition);
+}
+.form-input:focus{border-color:var(--gold)}
+.check-row{display:flex;gap:10px;align-items:flex-start;font-size:14px;margin-top:12px;color:#3D434D}
+.check-row input{accent-color:var(--gold);width:18px;height:18px;margin:1px 0 0}
+.check-row a{color:#1E7BEF;text-decoration:none}
+.btn-primary{
+  width:100%;border:0;border-radius:40px;padding:15px 24px;font-size:16px;font-weight:600;
+  background:var(--gold-grad);color:#fff;cursor:pointer;margin-top:18px;transition:var(--transition);
+}
+.btn-primary:disabled{opacity:.55;cursor:default}
+#btn-confirm{margin-top:20px}
+.support{margin-top:14px;border-top:1px solid var(--line);padding-top:14px;text-align:center}
+.support[hidden]{display:none}
+.support-toggle{background:none;border:0;color:var(--text-gray);font-size:14px;cursor:pointer;text-decoration:underline;padding:0}
+.support-toggle:hover{color:var(--text)}
+.support-panel{text-align:left;margin-top:12px;animation:fade .2s ease}
+@keyframes fade{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
+.support-panel ul{margin:0 0 14px;padding-left:18px}
+.support-panel li{font-size:13px;color:#4A505A;line-height:1.5;margin-bottom:6px}
+.support-panel li b{color:var(--text)}
+.btn-tg{
+  width:100%;display:flex;align-items:center;justify-content:center;gap:9px;
+  background:var(--graphite);color:#fff;border:0;border-radius:40px;padding:13px 20px;
+  font-size:15px;font-weight:600;cursor:pointer;transition:var(--transition);text-decoration:none;
+}
+.btn-tg:hover{background:#2B3038}
+.btn-tg svg{width:18px;height:18px;fill:#41A8E0}
+.tg-note{font-size:12px;color:var(--text-gray);text-align:center;margin-top:8px;line-height:1.45}
+.fail-box{
+  background:#FDF3F2;border:1px solid #F6D5D2;border-radius:16px;padding:13px 16px;
+  font-size:14px;color:#8E2A24;line-height:1.5;margin-top:20px;
+}
+.fail-box + #btn-confirm{margin-top:14px}
+.btn-ghost{
+  width:100%;border:1px solid var(--line);background:#fff;border-radius:40px;padding:13px 24px;
+  font-size:15px;color:#3D434D;cursor:pointer;margin-top:10px;
+}
+.link-row{text-align:center;font-size:14px;margin-top:16px;color:#3D434D}
+.link{background:none;border:0;color:var(--gold-ink);font-weight:600;cursor:pointer;font-size:14px;padding:0}
+.link.muted{color:var(--text-gray);font-weight:500;text-decoration:underline}
+.resend .link{color:var(--text);font-weight:600}
+.letter{background:#fff;border:1px solid var(--line);border-radius:20px;padding:22px 24px;margin-top:16px}
+.letter h4{margin:0 0 14px;font-size:17px}
+.letter .field{font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--text-gray);margin:16px 0 6px}
+.letter .field:first-of-type{margin-top:0}
+.letter .val{background:#F7F8FA;border:1px solid var(--line);border-radius:12px;padding:12px 14px;font-size:15px;color:#20242B;white-space:pre-wrap;line-height:1.6}
+.letter .val.mono{font-family:'JetBrains Mono',monospace;font-size:14px}
+
+/* ---------- экран кода ---------- */
+.sent-to{
+  background:#F7F8FA;border:1px solid var(--line);border-radius:16px;padding:14px 16px;
+  font-size:14px;color:#4A505A;line-height:1.5;
+}
+.sent-to b{color:var(--text)}
+.sent-to .change{display:block;margin-top:8px}
+
+.code-row{display:flex;gap:8px;justify-content:space-between;margin:20px 0 0}
+.code-cell{
+  width:52px;height:62px;border:1.5px solid var(--line);border-radius:14px;background:#fff;
+  text-align:center;font-size:26px;font-weight:600;font-family:'JetBrains Mono',monospace;
+  outline:none;transition:border-color .15s,background .15s,color .15s;color:var(--text);
+}
+.code-cell:focus{border-color:var(--gold);box-shadow:0 0 0 3px rgba(221,160,0,.16)}
+.code-cell:disabled{background:#F4F5F7;color:#9AA1AC}
+.state-error .code-cell{border-color:var(--red);color:var(--red)}
+.state-ok .code-cell{border-color:var(--green);color:var(--green);background:#F2FBF5}
+.shake{animation:shake .32s}
+@keyframes shake{
+  0%,100%{transform:translateX(0)}20%{transform:translateX(-7px)}
+  40%{transform:translateX(6px)}60%{transform:translateX(-4px)}80%{transform:translateX(3px)}
+}
+.hint{font-size:13px;color:var(--text-gray);text-align:center;line-height:1.4}
+.hint:not(:empty){margin-top:10px;margin-bottom:-8px}
+.hint.err{color:var(--red)}
+.hint.ok{color:var(--green)}
+.resend{text-align:center;margin-top:14px;font-size:14px;color:var(--text-gray)}
+.spinner{
+  width:16px;height:16px;border:2px solid rgba(255,255,255,.45);border-top-color:#fff;border-radius:50%;
+  display:inline-block;vertical-align:-3px;margin-right:8px;animation:spin .7s linear infinite;
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ---------- успех ---------- */
+.ok-wrap{text-align:center;padding:14px 0 6px}
+.ok-badge{
+  width:76px;height:76px;border-radius:50%;background:#E9F8EF;color:var(--green);
+  display:flex;align-items:center;justify-content:center;margin:0 auto 18px;font-size:36px;
+  animation:pop .35s ease;
+}
+@keyframes pop{0%{transform:scale(.6);opacity:0}100%{transform:scale(1);opacity:1}}
+.ok-wrap h3{margin:0 0 8px;font-size:22px}
+.ok-wrap p{margin:0;color:var(--text-gray);font-size:15px;line-height:1.5}
+
+/* ---------- нижние блоки ---------- */
+.section{max-width:1180px;margin:0 auto;padding:0 24px 56px}
+.section h2{font-size:26px;margin:44px 0 6px;letter-spacing:-.01em}
+.section .lead{color:#5C636E;margin:0 0 22px;font-size:16px}
+.grid2{display:grid;grid-template-columns:minmax(0,420px) minmax(0,1fr);gap:28px;align-items:start}
+.card{background:#fff;border:1px solid var(--line);border-radius:20px;padding:22px 24px}
+.card h4{margin:0 0 12px;font-size:17px}
+.mail{background:#fff;border:1px solid var(--line);border-radius:20px;overflow:hidden}
+.mail-top{padding:16px 22px;border-bottom:1px solid var(--line)}
+.mail-from{font-weight:700;font-size:15px}
+.mail-addr{color:var(--text-gray);font-size:13px}
+.mail-subj{font-weight:600;margin-top:10px;font-size:15px}
+.mail-body{padding:26px 22px 30px}
+.mail-body p{margin:0 0 14px;font-size:15px;color:#3D434D;line-height:1.55}
+.code-big{
+  font-family:'JetBrains Mono',monospace;font-size:38px;font-weight:700;letter-spacing:.18em;
+  background:#FBF6E8;border:1px solid #F0E2BB;border-radius:16px;padding:18px 10px;text-align:center;color:#20242B;
+}
+table.spec{width:100%;border-collapse:collapse;font-size:14px}
+table.spec td,table.spec th{border-bottom:1px solid var(--line);padding:10px 8px;text-align:left;vertical-align:top}
+table.spec th{font-family:'JetBrains Mono',monospace;font-weight:400;color:var(--text-gray);font-size:12px;letter-spacing:.06em;text-transform:uppercase}
+code{font-family:'JetBrains Mono',monospace;background:#F2F3F5;padding:2px 6px;border-radius:6px;font-size:13px}
+ul.tight{margin:0;padding-left:18px}
+ul.tight li{margin-bottom:8px;font-size:15px;color:#3D434D;line-height:1.5}
+.pill{display:inline-block;font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.08em;
+  text-transform:uppercase;background:#FBF3E0;color:var(--gold-ink);padding:4px 9px;border-radius:20px;margin-bottom:10px}
+.pill.gray{background:#F0F1F3;color:#6D7480}
+.flow{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:6px 0 24px}
+.flow span{background:#fff;border:1px solid var(--line);border-radius:40px;padding:9px 16px;font-size:14px}
+.flow span.old{color:#9AA1AC;text-decoration:line-through}
+.flow i{color:#B6BBC3;font-style:normal}
+@media(max-width:900px){
+  .hero{grid-template-columns:1fr}.site-nav{display:none}.grid2{grid-template-columns:1fr}
+  .hero h1{font-size:36px}.code-cell{width:46px;height:56px;font-size:22px}
+}
+</style>
+</head>
+<body>
+
+<div class="bar">
+  <b>Прототип</b>
+  <button data-go="register" class="on">1. Регистрация</button>
+  <button data-go="code">2. Ввод кода</button>
+  <button data-go="success">3. Успех</button>
+  <span class="sep"></span>
+  <button data-case="error">Неверный код</button>
+  <button data-case="expired">Код истек</button>
+  <button data-case="locked">Лимит попыток</button>
+  <button data-case="resent">Код отправлен снова</button>
+  <button data-case="failed">Письмо не ушло</button>
+  <span class="sep"></span>
+  <button data-go="quick">Вход по коду</button>
+  <button id="reset">Сбросить</button>
+</div>
+
+<div class="stage">
+  <div class="site dim" id="site">
+    <div class="site-header">
+      <div class="logo">
+        <div class="mark">A</div>
+        <div class="txt">Академия<small>АВТОКРАТИИ</small></div>
+      </div>
+      <div class="site-nav"><span>Партнеры</span><span>Программы</span><span>Об обучении</span><span>О нас</span></div>
+      <button class="btn-login">Войти</button>
+    </div>
+    <div class="hero">
+      <div>
+        <div class="kicker">ПОРТАЛ КЛУБА «АВТОКРАТИЯ»</div>
+        <h1>Академия Автократии</h1>
+        <p>Системное обучение для автосервисов и магазинов автозапчастей</p>
+        <button class="btn-hero">Начать обучение</button>
+      </div>
+      <div class="video"><div class="play">▶</div></div>
+    </div>
+    <div class="partners"><span>CTR</span><span>HAVENS</span><span>та-дам</span><span>MARSHALL</span><span>EPCINFO</span><span>ТОПТРИ</span><span>СТЭК</span></div>
+  </div>
+
+  <div class="overlay" id="overlay">
+
+    <!-- ЭКРАН 1. Регистрация -->
+    <div class="modal" id="m-register">
+      <div class="modal-header">
+        <h2 class="modal-title">Регистрация</h2>
+        <button class="close">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label class="input-label">Имя</label>
+          <input class="form-input" id="f-name" value="Тест">
+        </div>
+        <div class="form-group">
+          <label class="input-label">Email</label>
+          <input class="form-input" id="f-email" value="vvaavv@ogzmail.com">
+        </div>
+        <div class="form-group">
+          <label class="input-label">Пароль</label>
+          <input class="form-input" type="password" value="password123">
+        </div>
+        <div class="form-group">
+          <label class="input-label">Подтверждение пароля</label>
+          <input class="form-input" type="password" value="password123">
+        </div>
+        <label class="check-row"><input type="checkbox" checked><span>Согласен с <a href="#">Пользовательским соглашением</a></span></label>
+        <label class="check-row"><input type="checkbox" checked><span>Согласен на <a href="#">Обработку персональных данных</a></span></label>
+        <button class="btn-primary" id="btn-register">Зарегистрироваться</button>
+        <div class="link-row">Уже есть аккаунт? <button class="link">Войти</button></div>
+      </div>
+    </div>
+
+    <!-- ЭКРАН 2. Код -->
+    <div class="modal" id="m-code" hidden>
+      <div class="modal-header">
+        <h2 class="modal-title">Подтвердите почту</h2>
+        <button class="close">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="sent-to">
+          Код из 6 цифр отправлен на <b id="c-email">vvaavv@ogzmail.com</b>
+          <button class="link muted change" id="btn-change">Изменить почту</button>
+        </div>
+
+        <div class="code-row" id="code-row">
+          <input class="code-cell" inputmode="numeric" autocomplete="one-time-code" maxlength="1">
+          <input class="code-cell" inputmode="numeric" maxlength="1">
+          <input class="code-cell" inputmode="numeric" maxlength="1">
+          <input class="code-cell" inputmode="numeric" maxlength="1">
+          <input class="code-cell" inputmode="numeric" maxlength="1">
+          <input class="code-cell" inputmode="numeric" maxlength="1">
+        </div>
+        <div class="hint" id="c-hint"></div>
+
+        <button class="btn-primary" id="btn-confirm" disabled>Подтвердить</button>
+        <div class="resend" id="c-resend">Отправить код повторно можно через 60 секунд</div>
+
+        <div class="support" id="c-support" hidden>
+          <button class="support-toggle" id="support-toggle">Код не приходит</button>
+          <div class="support-panel" id="support-panel" hidden>
+            <ul>
+              <li>Проверьте папку <b>Спам</b> и вкладку <b>Промоакции</b>.</li>
+              <li>Проверьте адрес почты, опечатка в одну букву встречается чаще всего. <b>Изменить почту</b> в блоке выше.</li>
+              <li>Письмо может идти до 2 минут. Если прошло больше, напишите нам, отправим код вручную и разберемся на своей стороне.</li>
+            </ul>
+            <button class="btn-tg" id="btn-tg">
+              <svg viewBox="0 0 24 24"><path d="M9.8 16.1 9.6 20c.4 0 .5-.2.8-.4l1.9-1.8 3.9 2.9c.7.4 1.2.2 1.4-.7l2.6-12.2c.2-1-.4-1.4-1.1-1.2L2.6 11c-1 .4-1 1 .2 1.3l4.3 1.3 9.9-6.2c.5-.3.9-.1.5.2z"/></svg>
+              Написать в поддержку
+            </button>
+            <div class="tg-note">Скопируем вашу почту в буфер обмена, чтобы вы сразу вставили ее в чат</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ЭКРАН 3. Успех -->
+    <div class="modal" id="m-success" hidden>
+      <div class="modal-body">
+        <div class="ok-wrap">
+          <div class="ok-badge">✓</div>
+          <h3>Почта подтверждена</h3>
+          <p id="s-text">Входим в аккаунт</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ЭКРАН 4. Вход по коду -->
+    <div class="modal" id="m-quick" hidden>
+      <div class="modal-header">
+        <h2 class="modal-title">Вход по коду</h2>
+        <button class="close">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="sent-to">Введите почту, мы отправим код для входа. Пароль вводить не нужно.</div>
+        <div class="form-group" style="margin-top:16px">
+          <label class="input-label">Email</label>
+          <input class="form-input" value="vvaavv@ogzmail.com">
+        </div>
+        <button class="btn-primary" id="btn-quick">Отправить код</button>
+        <div class="link-row"><button class="link" id="btn-back-pass">Войти по паролю</button></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div class="section">
+  <span class="pill gray">Что меняется</span>
+  <h2>Путь пользователя</h2>
+  <p class="lead">Пользователь ни разу не выходит из окна регистрации и не уходит в почтовый клиент, чтобы кликнуть по ссылке.</p>
+
+  <div class="flow">
+    <span class="old">Регистрация</span><i>→</i>
+    <span class="old">Модалка «Понятно»</span><i>→</i>
+    <span class="old">Уход в почту</span><i>→</i>
+    <span class="old">Клик по ссылке</span><i>→</i>
+    <span class="old">Новая вкладка «Email подтвержден»</span><i>→</i>
+    <span class="old">Кнопка «Войти в систему»</span><i>→</i>
+    <span class="old">Окно авторизации</span><i>→</i>
+    <span class="old">Ввод логина и пароля</span>
+  </div>
+  <div class="flow">
+    <span>Регистрация</span><i>→</i>
+    <span>Ввод 6 цифр в том же окне</span><i>→</i>
+    <span>Пользователь внутри портала</span>
+  </div>
+
+  <div class="grid2">
+    <div>
+      <span class="pill">Письмо</span>
+      <div class="mail">
+        <div class="mail-top">
+          <div class="mail-from">Академия Автократии</div>
+          <div class="mail-addr">noreply@academy-avtokratiya.ru</div>
+          <div class="mail-subj">Код подтверждения: 481 209</div>
+        </div>
+        <div class="mail-body">
+          <p>Тест, здравствуйте.</p>
+          <p>Вот код для подтверждения почты в Академии Автократии:</p>
+          <div class="code-big">481209</div>
+          <p style="margin-top:16px">Введите его в окне на сайте. Код действует 15 минут.</p>
+          <p style="color:#7A818C;font-size:13px">Если вы не регистрировались в Академии, просто удалите это письмо.</p>
+        </div>
+      </div>
+      <div class="letter">
+        <h4>Текст письма. Подтверждение почты</h4>
+        <div class="field">Отправитель</div>
+        <div class="val mono">Академия Автократии &lt;noreply@academy-avtokratiya.ru&gt;</div>
+        <div class="field">Тема</div>
+        <div class="val mono">Код подтверждения: 481 209</div>
+        <div class="field">Прехедер</div>
+        <div class="val mono">Код действует 15 минут</div>
+        <div class="field">Тело</div>
+        <div class="val">{name}, здравствуйте.
+
+Вот код для подтверждения почты в Академии Автократии:
+
+481209
+
+Введите его в окне на сайте. Код действует 15 минут.
+
+Если вы не регистрировались в Академии, просто удалите это письмо.
+
+Код не подходит или письмо пришло с задержкой? Напишите нам: t.me/asist_volkov</div>
+        <p style="font-size:14px;color:#3D434D;margin:14px 0 0">Код в теле письма выводим моноширинным шрифтом 32px, чтобы его было удобно выделить и скопировать. В теме письма код с пробелом для читаемости, в теле без пробела, чтобы копирование сразу давало 6 цифр.</p>
+      </div>
+
+      <div class="letter">
+        <h4>Текст письма. Повторная отправка</h4>
+        <div class="field">Тема</div>
+        <div class="val mono">Новый код подтверждения: 730 514</div>
+        <div class="field">Тело</div>
+        <div class="val">{name}, здравствуйте.
+
+Вот новый код для подтверждения почты:
+
+730514
+
+Предыдущий код больше не работает. Новый код действует 15 минут.
+
+Если вы не запрашивали код, просто удалите это письмо.
+
+Нужна помощь? Напишите нам: t.me/asist_volkov</div>
+      </div>
+
+      <div class="letter">
+        <h4>Текст письма. Вход по коду. Этап 2</h4>
+        <div class="field">Тема</div>
+        <div class="val mono">Код для входа: 592 037</div>
+        <div class="field">Тело</div>
+        <div class="val">{name}, здравствуйте.
+
+Вот код для входа в Академию Автократии:
+
+592037
+
+Код действует 15 минут и работает только один раз.
+
+Если вы не запрашивали вход, смените пароль в профиле.</div>
+      </div>
+
+      <div class="card" style="margin-top:16px">
+        <h4>Почему код в теме письма</h4>
+        <ul class="tight">
+          <li>Пользователь видит код в списке писем и не открывает само письмо.</li>
+          <li>Работает на телефоне: код виден в пуш-уведомлении.</li>
+          <li>Формат темы: Код подтверждения: 481 209.</li>
+        </ul>
+      </div>
+    </div>
+
+    <div>
+      <span class="pill">Логика</span>
+      <div class="card">
+        <h4>Поведение поля ввода</h4>
+        <ul class="tight">
+          <li>6 отдельных ячеек, только цифры, фокус на первой сразу при открытии.</li>
+          <li>Вставка кода из буфера заполняет все 6 ячеек за раз.</li>
+          <li>Backspace возвращает на ячейку назад, стрелки двигают фокус.</li>
+          <li>Запрос уходит автоматически, как только введена 6 цифра. Кнопка «Подтвердить» остается для тех, кто вставляет код мышью.</li>
+          <li>На iOS и Android код подставляется автоматически из SMS-подобной подсказки за счет <code>autocomplete="one-time-code"</code>.</li>
+        </ul>
+      </div>
+
+      <div class="card" style="margin-top:16px">
+        <h4>Состояния экрана</h4>
+        <table class="spec">
+          <tr><th>Состояние</th><th>Что видит пользователь</th></tr>
+          <tr><td>Ожидание</td><td>Пустое поле, фокус на первой ячейке. Таймер повторной отправки 60 секунд.</td></tr>
+          <tr><td>Проверка</td><td>Ячейки заблокированы, на кнопке спиннер.</td></tr>
+          <tr><td>Неверный код</td><td>Красные ячейки, встряска, текст «Код неверный. Осталось 4 попытки». Поле очищается, фокус на первой ячейке.</td></tr>
+          <tr><td>Код истек</td><td>Текст «Срок кода истек», кнопка «Отправить новый код» активна сразу.</td></tr>
+          <tr><td>Лимит попыток</td><td>После 5 неверных вводов код сжигается. Текст «Слишком много попыток. Запросите новый код через 10 минут».</td></tr>
+          <tr><td>Письмо не ушло</td><td>Красная плашка «Сбой на нашей стороне», блок поддержки раскрыт сразу. Появляется, если SMTP вернул ошибку.</td></tr>
+          <tr><td>Успех</td><td>Зеленые ячейки, галочка, редирект в портал без дополнительных кликов.</td></tr>
+        </table>
+      </div>
+
+      <div class="card" style="margin-top:16px">
+        <h4>Поддержка на экране кода</h4>
+        <p style="font-size:15px;color:#3D434D;margin:0 0 12px">Ссылка на поддержку не висит на экране постоянно, иначе она становится шумом и по ней идут те, у кого все работает. Она появляется ровно тогда, когда у человека начались сложности.</p>
+        <table class="spec">
+          <tr><th>Момент</th><th>Что показываем</th></tr>
+          <tr><td>Первые 60 секунд</td><td>Ничего. Человек ждет письмо, это нормально.</td></tr>
+          <tr><td>Таймер дошел до нуля</td><td>Появляется свернутая строка «Код не приходит». Рядом с кнопкой повторной отправки.</td></tr>
+          <tr><td>Вторая отправка кода</td><td>Блок раскрывается сам: спам, опечатка в почте, кнопка «Написать в поддержку».</td></tr>
+          <tr><td>Лимит попыток</td><td>Блок раскрыт. Человек заблокирован на 10 минут, поддержка снимет блок руками.</td></tr>
+          <tr><td>Ошибка отправки</td><td>Блок раскрыт плюс плашка о сбое. Тут виноваты мы, не пользователь.</td></tr>
+        </table>
+        <p style="font-size:15px;color:#3D434D;margin:14px 0 0">Кнопка ведет на <code>https://t.me/asist_volkov</code> и открывается в новой вкладке. Перед переходом в буфер обмена копируется строка «Не приходит код подтверждения. Почта: адрес». Человеку остается вставить ее в чат, а поддержке не надо вытягивать почту вопросами.</p>
+      </div>
+
+      <div class="card" style="margin-top:16px">
+        <h4>Доставляемость. Наша сторона</h4>
+        <p style="font-size:15px;color:#3D434D;margin:0 0 12px">Ссылка на поддержку закрывает симптом. Причину лечим отдельно, иначе поддержка превратится в ручную выдачу доступов.</p>
+        <ul class="tight">
+          <li>Проверить SPF, DKIM и DMARC на домене academy-avtokratiya.ru. Без них письма с кодами почти гарантированно уходят в спам у Mail.ru и Яндекса.</li>
+          <li>Завести postmaster в Mail.ru и Яндексе, смотреть долю спама по домену.</li>
+          <li>Слово «код» в теме письма и отсутствие картинок и ссылок снижают риск спама, у транзакционных писем с одной кнопкой репутация лучше.</li>
+          <li>Логировать статус отправки и message-id в <code>email_codes</code>. Тогда на обращение в поддержку сразу видно, ушло письмо или нет.</li>
+          <li>Ошибка SMTP шлет алерт в служебный чат. Мы узнаем о проблеме раньше, чем напишет первый пользователь.</li>
+          <li>Поддержке нужна кнопка в админке: подтвердить почту вручную и выдать доступ, не заставляя человека проходить регистрацию заново.</li>
+        </ul>
+      </div>
+
+      <div class="card" style="margin-top:16px">
+        <h4>Бэкенд</h4>
+        <table class="spec">
+          <tr><th>Метод</th><th>Описание</th></tr>
+          <tr><td><code>POST /auth/register</code></td><td>Как сейчас, но вместо ссылки создает код и шлет письмо. Ответ: <code>{success, email, resend_after: 60, expires_in: 900}</code>. JWT на этом шаге не выдается.</td></tr>
+          <tr><td><code>POST /auth/confirm-code</code></td><td>Принимает <code>{email, code}</code>. При успехе ставит <code>email_confirmation = true</code>, гасит код и сразу возвращает JWT и объект user. Это и есть быстрая авторизация.</td></tr>
+          <tr><td><code>POST /auth/resend-code</code></td><td>Инвалидирует прошлый код, создает новый. 429, если с прошлой отправки прошло меньше 60 секунд.</td></tr>
+        </table>
+        <p style="font-size:14px;color:#3D434D;margin:14px 0 0">Коды ошибок для фронта: <code>invalid_code</code> с полем <code>attempts_left</code>, <code>code_expired</code>, <code>too_many_attempts</code> с полем <code>retry_after</code>.</p>
+      </div>
+
+      <div class="card" style="margin-top:16px">
+        <h4>Хранение</h4>
+        <p style="font-size:15px;color:#3D434D;margin:0 0 12px">Новая таблица <code>email_codes</code>. Открытый код в базе не храним, только хеш.</p>
+        <table class="spec">
+          <tr><th>Поле</th><th>Значение</th></tr>
+          <tr><td><code>user_id</code></td><td>ссылка на users</td></tr>
+          <tr><td><code>email</code></td><td>нормализованный, в нижнем регистре</td></tr>
+          <tr><td><code>code_hash</code></td><td>sha256 от 6 цифр</td></tr>
+          <tr><td><code>purpose</code></td><td>email_confirmation или quick_login</td></tr>
+          <tr><td><code>expires_at</code></td><td>created_at + 15 минут</td></tr>
+          <tr><td><code>attempts</code></td><td>счетчик, максимум 5</td></tr>
+          <tr><td><code>consumed_at</code></td><td>отметка использования, повторно код не работает</td></tr>
+        </table>
+        <p style="font-size:14px;color:#3D434D;margin:14px 0 0">Генерация: <code>crypto.randomInt(100000, 1000000)</code>. Только цифры, никаких букв, чтобы не повторить проблему смешанных раскладок.</p>
+      </div>
+
+      <div class="card" style="margin-top:16px">
+        <h4>Лимиты и защита</h4>
+        <ul class="tight">
+          <li>5 попыток ввода на один код, дальше код сжигается.</li>
+          <li>Не больше 5 отправок кода в час на один email и на один IP.</li>
+          <li>Повторная отправка не чаще 1 раза в 60 секунд.</li>
+          <li>Ответ <code>confirm-code</code> одинаков по времени для несуществующего и существующего email, чтобы нельзя было перебирать базу.</li>
+        </ul>
+      </div>
+
+      <div class="card" style="margin-top:16px">
+        <h4>Совместимость и что удаляем</h4>
+        <ul class="tight">
+          <li>Роут <code>/confirm-email?token=</code> оставляем работать еще 24 часа после релиза, чтобы у людей со старыми письмами ничего не сломалось. Потом удаляем.</li>
+          <li>Страница «Email подтвержден» с кнопкой «Войти в систему» удаляется. После кода пользователь уже внутри.</li>
+          <li>Модалка «Мы отправили письмо для подтверждения» с кнопкой «Понятно» удаляется полностью.</li>
+          <li>Кнопка повторной отправки письма в старом виде заменяется на повторную отправку кода.</li>
+        </ul>
+      </div>
+
+      <div class="card" style="margin-top:16px">
+        <h4>Метрика</h4>
+        <p style="font-size:15px;color:#3D434D;margin:0 0 10px">Цели в Яндекс Метрике на счетчик 109282622:</p>
+        <ul class="tight">
+          <li><code>reg_submit</code> отправка формы регистрации</li>
+          <li><code>code_screen_view</code> показ экрана ввода кода</li>
+          <li><code>code_error</code> неверный код</li>
+          <li><code>code_resend</code> запрос нового кода</li>
+          <li><code>code_success</code> подтверждение, ключевой шаг воронки</li>
+        </ul>
+        <p style="font-size:14px;color:#3D434D;margin:12px 0 0">Разрыв между <code>reg_submit</code> и <code>code_success</code> покажет реальную потерю на подтверждении. Сейчас этот участок воронки не виден.</p>
+      </div>
+
+      <div class="card" style="margin-top:16px">
+        <h4>Вход по коду. Этап 2, по желанию</h4>
+        <p style="font-size:15px;color:#3D434D;margin:0 0 10px">Тот же компонент ввода кода переиспользуется в окне авторизации. Пользователь вводит почту, получает код, входит без пароля. Закрывает частый сценарий «забыл пароль» без цепочки с письмом и формой сброса.</p>
+        <p style="font-size:15px;color:#3D434D;margin:0">Отличие только в <code>purpose = quick_login</code> и в том, что аккаунт уже должен быть подтвержден.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const REAL_CODE = '481209';
+const cells = [...document.querySelectorAll('#code-row .code-cell')];
+const row = document.getElementById('code-row');
+const hint = document.getElementById('c-hint');
+const resendEl = document.getElementById('c-resend');
+const btnConfirm = document.getElementById('btn-confirm');
+const site = document.getElementById('site');
+const screens = {
+  register: document.getElementById('m-register'),
+  code: document.getElementById('m-code'),
+  success: document.getElementById('m-success'),
+  quick: document.getElementById('m-quick')
+};
+let attemptsLeft = 5, resendLeft = 60, timer = null, locked = false, resendCount = 0;
+const supportBox = document.getElementById('c-support');
+const supportPanel = document.getElementById('support-panel');
+const TG = 'https://t.me/asist_volkov';
+
+function showSupport(expanded){
+  supportBox.hidden = false;
+  if(expanded) supportPanel.hidden = false;
+}
+function hideSupport(){
+  supportBox.hidden = true;
+  supportPanel.hidden = true;
+}
+
+function show(name){
+  Object.entries(screens).forEach(([k,el]) => el.hidden = (k !== name));
+  document.querySelectorAll('.bar [data-go]').forEach(b => b.classList.toggle('on', b.dataset.go === name));
+  if(name === 'code'){ startResend(); setTimeout(() => cells[0].focus(), 60); }
+  else if(timer){ clearInterval(timer); timer = null; }
+}
+
+function clearCells(focus){
+  cells.forEach(c => { c.value = ''; c.disabled = false; });
+  row.classList.remove('state-error','state-ok');
+  btnConfirm.disabled = true;
+  if(focus) cells[0].focus();
+}
+
+function value(){ return cells.map(c => c.value).join(''); }
+
+cells.forEach((cell, i) => {
+  cell.addEventListener('input', e => {
+    cell.value = cell.value.replace(/\D/g,'').slice(0,1);
+    row.classList.remove('state-error');
+    hint.className = 'hint';
+    if(cell.value && i < 5) cells[i+1].focus();
+    btnConfirm.disabled = value().length !== 6;
+    if(value().length === 6) submit();
+  });
+  cell.addEventListener('keydown', e => {
+    if(e.key === 'Backspace' && !cell.value && i > 0){ cells[i-1].focus(); cells[i-1].value=''; e.preventDefault(); }
+    if(e.key === 'ArrowLeft' && i > 0) cells[i-1].focus();
+    if(e.key === 'ArrowRight' && i < 5) cells[i+1].focus();
+  });
+  cell.addEventListener('paste', e => {
+    e.preventDefault();
+    const digits = (e.clipboardData.getData('text') || '').replace(/\D/g,'').slice(0,6).split('');
+    digits.forEach((d, k) => { if(cells[k]) cells[k].value = d; });
+    cells[Math.min(digits.length,5)].focus();
+    btnConfirm.disabled = value().length !== 6;
+    if(value().length === 6) submit();
+  });
+});
+
+function submit(){
+  if(locked) return;
+  cells.forEach(c => c.disabled = true);
+  btnConfirm.disabled = true;
+  btnConfirm.innerHTML = '<span class="spinner"></span>Проверяем';
+  setTimeout(() => {
+    btnConfirm.innerHTML = 'Подтвердить';
+    if(value() === REAL_CODE){ success(); } else { fail(); }
+  }, 700);
+}
+
+function fail(){
+  attemptsLeft--;
+  cells.forEach(c => c.disabled = false);
+  row.classList.add('state-error','shake');
+  setTimeout(() => row.classList.remove('shake'), 340);
+  if(attemptsLeft <= 0){ lock(); return; }
+  hint.className = 'hint err';
+  hint.textContent = 'Код неверный. Осталось ' + attemptsLeft + ' ' + plural(attemptsLeft);
+  setTimeout(() => { cells.forEach(c => c.value=''); cells[0].focus(); btnConfirm.disabled = true; }, 380);
+}
+
+function plural(n){
+  if(n === 1) return 'попытка';
+  if(n >= 2 && n <= 4) return 'попытки';
+  return 'попыток';
+}
+
+function lock(){
+  locked = true;
+  cells.forEach(c => { c.value=''; c.disabled = true; });
+  hint.className = 'hint err';
+  hint.textContent = 'Слишком много попыток. Запросите новый код через 10 минут';
+  resendEl.innerHTML = '<button class="link" onclick="hardReset()">Запросить новый код</button>';
+  btnConfirm.disabled = true;
+  showSupport(true);
+}
+
+function success(){
+  row.classList.remove('state-error');
+  row.classList.add('state-ok');
+  hint.className = 'hint ok';
+  hint.textContent = 'Готово';
+  hideSupport();
+  setTimeout(() => {
+    show('success');
+    let dots = 0;
+    const t = setInterval(() => {
+      dots = (dots + 1) % 4;
+      document.getElementById('s-text').textContent = 'Входим в аккаунт' + '.'.repeat(dots);
+    }, 300);
+    setTimeout(() => {
+      clearInterval(t);
+      document.getElementById('s-text').textContent = 'Дальше открывается анкета «Расскажите о себе»';
+    }, 2200);
+  }, 600);
+}
+
+function startResend(){
+  if(timer) clearInterval(timer);
+  resendLeft = 60;
+  tickResend();
+  timer = setInterval(() => { resendLeft--; tickResend(); }, 1000);
+}
+function tickResend(){
+  if(locked) return;
+  if(resendLeft > 0){
+    resendEl.textContent = 'Отправить код повторно можно через ' + resendLeft + ' сек';
+  } else {
+    clearInterval(timer); timer = null;
+    resendEl.innerHTML = '<button class="link" onclick="resend()">Отправить код повторно</button>';
+    showSupport(false);
+  }
+}
+function resend(){
+  locked = false; attemptsLeft = 5; resendCount++;
+  clearCells(true);
+  hint.className = 'hint ok';
+  hint.textContent = 'Новый код отправлен на почту';
+  startResend();
+  showSupport(resendCount >= 2);
+}
+function hardReset(){
+  locked = false; attemptsLeft = 5; resendCount = 0;
+  clearCells(true);
+  hint.className = 'hint';
+  hint.textContent = '';
+  const box = document.getElementById('fail-box');
+  if(box) box.remove();
+  hideSupport();
+  startResend();
+}
+window.resend = resend; window.hardReset = hardReset;
+
+document.getElementById('btn-register').addEventListener('click', e => {
+  const b = e.currentTarget;
+  b.innerHTML = '<span class="spinner"></span>Отправляем код';
+  setTimeout(() => {
+    b.innerHTML = 'Зарегистрироваться';
+    document.getElementById('c-email').textContent = document.getElementById('f-email').value;
+    hardReset();
+    show('code');
+  }, 700);
+});
+document.getElementById('btn-change').addEventListener('click', () => show('register'));
+document.getElementById('btn-quick').addEventListener('click', () => { hardReset(); show('code'); });
+document.getElementById('btn-back-pass').addEventListener('click', () => show('register'));
+document.getElementById('btn-confirm').addEventListener('click', submit);
+document.getElementById('support-toggle').addEventListener('click', () => {
+  supportPanel.hidden = !supportPanel.hidden;
+});
+document.getElementById('btn-tg').addEventListener('click', () => {
+  const mail = document.getElementById('c-email').textContent;
+  const msg = 'Не приходит код подтверждения. Почта: ' + mail;
+  if(navigator.clipboard) navigator.clipboard.writeText(msg).catch(() => {});
+  window.open(TG, '_blank');
+});
+document.querySelectorAll('.close').forEach(b => b.addEventListener('click', () => {
+  document.getElementById('overlay').style.display = 'none';
+  site.classList.remove('dim');
+}));
+
+document.querySelectorAll('.bar [data-go]').forEach(b => b.addEventListener('click', () => {
+  document.getElementById('overlay').style.display = 'flex';
+  site.classList.add('dim');
+  if(b.dataset.go === 'code') hardReset();
+  show(b.dataset.go);
+}));
+
+document.querySelectorAll('.bar [data-case]').forEach(b => b.addEventListener('click', () => {
+  document.getElementById('overlay').style.display = 'flex';
+  site.classList.add('dim');
+  show('code');
+  const c = b.dataset.case;
+  setTimeout(() => {
+    if(c === 'error'){
+      hardReset(); attemptsLeft = 5;
+      cells.forEach((cell,i) => cell.value = '123456'[i]);
+      submit();
+    }
+    if(c === 'expired'){
+      hardReset();
+      cells.forEach(cell => { cell.value=''; cell.disabled = true; });
+      hint.className = 'hint err';
+      hint.textContent = 'Срок кода истек';
+      if(timer) clearInterval(timer);
+      resendEl.innerHTML = '<button class="link" onclick="hardReset()">Отправить новый код</button>';
+      btnConfirm.disabled = true;
+      showSupport(false);
+    }
+    if(c === 'locked'){ hardReset(); attemptsLeft = 1; lock(); }
+    if(c === 'resent'){ hardReset(); resend(); }
+    if(c === 'failed'){
+      hardReset();
+      cells.forEach(cell => cell.disabled = true);
+      btnConfirm.disabled = true;
+      if(timer) clearInterval(timer);
+      resendEl.innerHTML = '<button class="link" onclick="hardReset()">Отправить код еще раз</button>';
+      const box = document.createElement('div');
+      box.className = 'fail-box'; box.id = 'fail-box';
+      box.textContent = 'Письмо не удалось отправить. Это сбой на нашей стороне. Попробуйте еще раз или напишите в поддержку, выдадим доступ вручную.';
+      btnConfirm.parentNode.insertBefore(box, btnConfirm);
+      showSupport(true);
+    }
+  }, 40);
+}));
+
+document.getElementById('reset').addEventListener('click', () => {
+  document.getElementById('overlay').style.display = 'flex';
+  site.classList.add('dim');
+  hardReset(); show('register');
+});
+
+show('register');
+</script>
+</body>
+</html>
